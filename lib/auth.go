@@ -1,11 +1,11 @@
 package lib
 
 import (
-	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
-	"com.quizApp/models"
+	"com.backend/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -13,13 +13,15 @@ import (
 
 type Payload struct {
 	jwt.Claims
-	email         string    `json:"email"`
-	exp           time.Time `json:"exp"`
-	authenticated bool      `json:"authenticated"`
+	Email         string    `json:"email"`
+	Exp           time.Time `json:"exp"`
+	Authenticated bool      `json:"authenticated"`
 }
 
+const signingKey = "asldfnlkajsndf"
+
 func GetJwt(user *models.User) (string, error) {
-	hmacSampleSecret := []byte("asldfnlkajsndf")
+	hmacSampleSecret := []byte(signingKey)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"email":         user.Email,
 		"exp":           time.Now().UTC().Add(time.Hour * 48).Unix(),
@@ -34,21 +36,47 @@ func GetJwt(user *models.User) (string, error) {
 }
 
 func VerifyJwt(c *gin.Context) {
-	token := c.Request.Header.Get("token")
-	fmt.Printf("%T", token)
-	if token != "" {
-		token, err := jwt.ParseWithClaims(token, &Payload{}, func(*jwt.Token) (interface{}, error) {
-			return []byte("All your base"), nil
+	bearerToken := c.Request.Header.Get("Authorization")
+	if bearerToken == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Unauthorized",
 		})
-		if claims, ok := token.Claims.(*Payload); ok && token.Valid {
-			fmt.Printf("%v %v", claims.email, claims.exp)
-		} else {
-			fmt.Println(err)
-		}
-		c.Next()
+		c.Abort()
+		return
 	}
-	c.JSON(http.StatusUnauthorized, gin.H{
-		"message": "Unauthorized",
+	t := strings.Split(bearerToken, " ")
+	token := t[1]
+	if token == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Unauthorized",
+		})
+		c.Abort()
+		return
+	}
+	result, err := jwt.Parse(token, func(jwtToken *jwt.Token) (interface{}, error) {
+		if _, ok := jwtToken.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, NewHttpError("Invalid token", "", 401)
+		}
+		return []byte(signingKey), nil
 	})
-	return
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Unauthorized",
+			"reason":  err.Error(),
+		})
+		c.Abort()
+		return
+	}
+	if claims, ok := result.Claims.(jwt.MapClaims); ok && result.Valid {
+		// now := time.Now().Unix()
+		// isTokenExpired := claims.VerifyExpiresAt(now, false)
+		c.Set("Email", claims["email"])
+		c.Next()
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Unauthorized",
+			"reason":  "Invalid claims",
+		})
+		c.Abort()
+	}
 }

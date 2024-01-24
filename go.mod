@@ -1,4 +1,4 @@
-module com.quizApp
+module com.backend
 
 go 1.19
 

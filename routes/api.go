@@ -1,16 +1,25 @@
 package routes
 
 import (
-	"com.quizApp/http/api/controller"
+	"com.backend/http/api/controller"
+	"com.backend/middleware"
 	"github.com/gin-gonic/gin"
 )
 
 func InitializeAPIRoute(r *gin.Engine) {
-	api := r.Group("/api")
+	r.Use(middleware.ErrorHandler())
+	public := r.Group("/api")
 	{
-		api.POST("/sign-in", controller.Signin)
-		api.POST("/sign-up", controller.Signup)
-		api.GET("/get-users", controller.GetAllUsers)
-		api.GET("/get-users/:email", controller.GetUser)
+		public.POST("/sign-in", controller.Signin)
+		public.POST("/sign-up", controller.Signup)
+	}
+
+	private := r.Group("/api")
+	private.Use(middleware.AuthHandler())
+	{
+		private.GET("/get-users", controller.GetAllUsers)
+		private.GET("/get-user/:email", controller.GetUser)
+		private.GET("/me", controller.GetCurrentUser)
+		private.PUT("/me/update", controller.UpdateUser)
 	}
 }
