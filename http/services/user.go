@@ -10,17 +10,12 @@ import (
 	"gorm.io/gorm"
 )
 
-type CreateUserServiceResponse struct {
-	user  *models.User
-	token string
-}
-
 type UserWithLandlord struct {
 	models.User
 	Landlord models.Landlord `json:"landlord"`
 }
 
-func CreateUserService(input dto.CreateUserInput) (*CreateUserServiceResponse, error) {
+func CreateUserService(input dto.CreateUserInput) (*dto.CreateUserServiceResponse, error) {
 	password := input.Password
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), 4)
 	if err != nil {
@@ -56,9 +51,9 @@ func CreateUserService(input dto.CreateUserInput) (*CreateUserServiceResponse, e
 		return nil, lib.NewHttpError("Token Generation Failed", tokenGenErr.Error(), 500)
 	}
 
-	return &CreateUserServiceResponse{
-		user:  &user,
-		token: token,
+	return &dto.CreateUserServiceResponse{
+		User:  &user,
+		Token: token,
 	}, nil
 }
 
@@ -112,7 +107,7 @@ func UpdateUserService(email *string, input dto.UpdateUserInput) (*models.User, 
 	}
 
 	if input.PhoneNumber != nil {
-		user.PhoneNumber = *input.PhoneNumber
+		user.PhoneNumber = input.PhoneNumber
 	}
 
 	if input.FirstName != nil {

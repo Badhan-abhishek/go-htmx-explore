@@ -3,8 +3,9 @@ package models
 type Property struct {
 	Model
 	Label      string  `json:"label"`
-	Address    Address `json:"address" gorm:"foreignKey:ID;references:ID"`
-	LandlordID uint    `json:"landlordId"`
+	Address    Address `json:"address"`
+	LandlordID uint    `json:"-"`
+	Units      []Unit  `json:"units"`
 }
 
 type Address struct {
@@ -15,11 +16,13 @@ type Address struct {
 	Country    string  `json:"country"`
 	PostalCode string  `json:"postalCode"`
 	State      string  `json:"state"`
+	PropertyID uint    `json:"-"`
 }
 
 type Unit struct {
 	Model
-	Name     string     `json:"name"`
-	Property Property   `json:"property" gorm:"foreignKey:ID;references:ID"`
-	Images   []Document `json:"images" gorm:"many2many:unit_image;"`
+	Name        string     `json:"name"`
+	Images      []Document `json:"images" gorm:"many2many:unit_image;"`
+	PropertyID  uint       `json:"propertyId"`
+	MaxCapacity int        `json:"maxCapacity"`
 }

@@ -22,8 +22,9 @@ func Signup(c *gin.Context) {
 		c.Error(err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"user": &user,
+		"data": &user,
 	})
 }
 

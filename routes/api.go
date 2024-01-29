@@ -21,5 +21,8 @@ func InitializeAPIRoute(r *gin.Engine) {
 		private.GET("/get-user/:email", controller.GetUser)
 		private.GET("/me", controller.GetCurrentUser)
 		private.PUT("/me/update", controller.UpdateUser)
+		private.POST("/property/add", controller.AddProperty)
+		private.GET("/properties", controller.GetLandlordProperties)
+		private.POST("/unit/add", controller.CreateUnit)
 	}
 }
